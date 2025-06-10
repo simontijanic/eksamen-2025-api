@@ -53,8 +53,8 @@ Dette er backend-API for Foxvote-prosjektet. Her kan brukere stemme på søte re
    - Setter opp Nginx reverse proxy for `/api/`
 
 4. **Etter kjøring:**
+   - Kjør source ~/.bashrc også start node med pm2 start
    - API-et kjører på http://<server-ip>/api/
-   - Sjekk status med `pm2 status`
    - Endre MongoDB-tilkobling i `.env` hvis nødvendig
 
 ## Eksempel på .env-fil
