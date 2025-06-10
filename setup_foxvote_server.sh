@@ -47,21 +47,12 @@ if ! command -v nvm &> /dev/null; then
   exit 1
 fi
 
-# 3. Klon kun api-prosjektet til dev-brukerens hjemmemappe hvis SUDO_USER er satt
+# 3. Klon kun api-prosjektet til /home/project hvis SUDO_USER er satt
 if [ "$SUDO_USER" ]; then
-  API_FOLDER="/home/$SUDO_USER/foxvote-api"
-  # 2. Hvis git clone feiler, prøv igjen én gang automatisk.
-  GIT_CLONE_ATTEMPTS=0
-  CLONE_OK=0
-  while [ $GIT_CLONE_ATTEMPTS -lt 2 ] && [ ! -d "$API_FOLDER" ]; do
-    GIT_CLONE_ATTEMPTS=$((GIT_CLONE_ATTEMPTS+1))
-    echo "Kloner repo til $API_FOLDER (forsøk $GIT_CLONE_ATTEMPTS)..."
-    sudo -u $SUDO_USER git clone "$GIT_REPO" "$API_FOLDER" && CLONE_OK=1 && break
-    sleep 2
-  done
+  API_FOLDER="/home/project/foxvote-api"
   if [ ! -d "$API_FOLDER" ]; then
-    echo "Klarte ikke å klone repo etter flere forsøk. Avslutter."
-    exit 1
+    sudo -u $SUDO_USER mkdir -p /home/project
+    sudo -u $SUDO_USER git clone "$GIT_REPO" "$API_FOLDER"
   fi
   cd "$API_FOLDER"
 else
