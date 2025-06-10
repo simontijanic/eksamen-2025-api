@@ -6,7 +6,8 @@ function getRandomFoxId(excludeId = null) {
     let id;
     do {
         id = Math.floor(Math.random() * MAX_FOX_ID) + 1;
-    } while (id === excludeId);
+    } while (id === excludeId); // hvis du passer inn et excludeId så vil det ikke bli valgt
+    // Dette sikrer at vi ikke får samme ID som allerede er valgt
     return id;
 }
 

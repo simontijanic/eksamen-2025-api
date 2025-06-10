@@ -2,7 +2,7 @@ const Vote = require('../models/vote');
 const { getRandomFoxId, getFoxImageUrl } = require('../utils/foxImages');
 
 const COOLDOWN_MS = 3000; // 3 sekunder
-const voteCooldowns = new Map(); // IP -> tidspunkt for siste stemme
+const voteCooldowns = {}; // IP -> timestamp
 
 // Hent to tilfeldige rever
 exports.getRandomImages = async (req, res) => {
@@ -19,13 +19,13 @@ exports.voteForFox = async (req, res) => {
     const { imageId } = req.body;
     if (!imageId) return res.status(400).json({ message: 'imageId is required' });
 
-    // Sjekk cooldown for IP
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     const now = Date.now();
-    if (voteCooldowns.has(ip) && now - voteCooldowns.get(ip) < COOLDOWN_MS) {
+
+    if (voteCooldowns[ip] && now - voteCooldowns[ip] < COOLDOWN_MS) {
         return res.status(429).json({ message: 'Vent litt før du stemmer igjen.' });
     }
-    voteCooldowns.set(ip, now);
+    voteCooldowns[ip] = now;
 
     try {
         // Øk stemmetallet for valgt bilde
