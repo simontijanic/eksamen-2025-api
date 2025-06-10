@@ -47,11 +47,11 @@ if ! command -v nvm &> /dev/null; then
   exit 1
 fi
 
-# 3. Klon kun api-prosjektet til /home/project hvis SUDO_USER er satt
+# 3. Klon kun api-prosjektet til dev-brukerens hjemmemappe hvis SUDO_USER er satt
 if [ "$SUDO_USER" ]; then
-  API_FOLDER="/home/project/foxvote-api"
+  DEV_HOME="/home/$SUDO_USER"
+  API_FOLDER="$DEV_HOME/foxvote-api"
   if [ ! -d "$API_FOLDER" ]; then
-    sudo -u $SUDO_USER mkdir -p /home/project
     sudo -u $SUDO_USER git clone "$GIT_REPO" "$API_FOLDER"
   fi
   cd "$API_FOLDER"
