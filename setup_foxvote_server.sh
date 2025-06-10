@@ -19,7 +19,7 @@ API_FOLDER="$2"
 
 # 1. Oppdater og installer avhengigheter
 apt update && apt upgrade -y
-apt install -y curl git nginx
+apt install -y curl git nginx unzip
 
 # 2. Installer FNM (Fast Node Manager)
 if ! command -v fnm &> /dev/null; then
@@ -34,11 +34,16 @@ if [ ! -d "$API_FOLDER" ]; then
 fi
 cd "$API_FOLDER"
 
-# 4. Installer Node.js (LTS) og npm via FNM
+# 3b. Lag .env fra eksempel hvis ikke finnes
+if [ ! -f .env ]; then
+  cp .env.example .env
+fi
+
+# 4. Installer siste versjon av Node.js via FNM
 export PATH="$HOME/.fnm:$PATH"
 eval "$(fnm env)"
-fnm install --lts
-fnm use --lts
+fnm install latest
+fnm use latest
 
 # 5. Installer avhengigheter og PM2
 npm install -g pm2
