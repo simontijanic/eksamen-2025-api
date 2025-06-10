@@ -153,6 +153,18 @@ else
   fi
 fi
 
+# 8. Konfigurer brannmur (UFW)
+echo "Konfigurerer UFW-brannmur..."
+ufw --force enable
+ufw allow 22/tcp
+ufw allow 80/tcp
+# Tillat kun frontend-serveren å nå API-porten (3000)
+ufw allow from 10.12.87.102 to any port 3000
+# (Optional: allow outgoing to MongoDB if needed)
+# ufw allow out to 10.12.87.100 port 27017
+ufw default deny incoming
+ufw default allow outgoing
+
 echo "\n--- Ferdig! ---"
 echo "API kjører på http://<server-ip>/api/"
 echo "API-mappe: $API_FOLDER"
