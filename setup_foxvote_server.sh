@@ -128,7 +128,13 @@ server {
 }
 EOL
 
+# Remove default nginx configuration
+rm -f /etc/nginx/sites-enabled/default
+
+# Enable foxvote-api configuration
 ln -sf /etc/nginx/sites-available/foxvote-api /etc/nginx/sites-enabled/foxvote-api
+
+# Test configuration and reload nginx
 nginx -t && systemctl reload nginx
 
 # 4b. Sørg for at NVM lastes automatisk for dev-brukeren i nye shells
