@@ -19,7 +19,7 @@ API_FOLDER="$2"
 
 # 1. Oppdater og installer avhengigheter
 apt update && apt upgrade -y
-apt install -y curl git nginx unzip
+apt install -y curl git unzip nginx
 
 # 2. Installer FNM (Fast Node Manager)
 if ! command -v fnm &> /dev/null; then
