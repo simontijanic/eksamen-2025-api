@@ -24,15 +24,25 @@ apt install -y curl git unzip nginx
 # 2. Installer FNM (Fast Node Manager)
 if ! command -v fnm &> /dev/null; then
   curl -fsSL https://fnm.vercel.app/install | bash
-  # Finn riktig FNM-bin path (for root eller sudo-bruker)
+  # Kjør source på riktig bashrc for å få fnm i PATH
   if [ "$SUDO_USER" ]; then
-    FNM_BIN_PATH="/home/$SUDO_USER/.local/share/fnm"
+    USER_HOME="/home/$SUDO_USER"
   else
-    FNM_BIN_PATH="$HOME/.local/share/fnm"
+    USER_HOME="$HOME"
   fi
-  export PATH="$FNM_BIN_PATH:$PATH"
-  eval "$(fnm env)"
+  if [ -f "$USER_HOME/.bashrc" ]; then
+    source "$USER_HOME/.bashrc"
+  fi
 fi
+
+# Finn riktig FNM-bin path (for root eller sudo-bruker)
+if [ "$SUDO_USER" ]; then
+  FNM_BIN_PATH="/home/$SUDO_USER/.local/share/fnm"
+else
+  FNM_BIN_PATH="$HOME/.local/share/fnm"
+fi
+export PATH="$FNM_BIN_PATH:$PATH"
+eval "$(fnm env)"
 
 # 3. Klon kun api-prosjektet
 if [ ! -d "$API_FOLDER" ]; then
