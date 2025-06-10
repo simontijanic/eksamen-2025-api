@@ -24,16 +24,13 @@ apt install -y curl git unzip nginx
 # 2. Installer FNM (Fast Node Manager)
 if ! command -v fnm &> /dev/null; then
   curl -fsSL https://fnm.vercel.app/install | bash
-  # Source bashrc to get fnm in PATH for this script
+  # Finn riktig FNM-bin path (for root eller sudo-bruker)
   if [ "$SUDO_USER" ]; then
-    USER_HOME=$(eval echo "~$SUDO_USER")
+    FNM_BIN_PATH="/home/$SUDO_USER/.local/share/fnm"
   else
-    USER_HOME="$HOME"
+    FNM_BIN_PATH="$HOME/.local/share/fnm"
   fi
-  if [ -f "$USER_HOME/.bashrc" ]; then
-    source "$USER_HOME/.bashrc"
-  fi
-  export PATH="$HOME/.fnm:$PATH"
+  export PATH="$FNM_BIN_PATH:$PATH"
   eval "$(fnm env)"
 fi
 
