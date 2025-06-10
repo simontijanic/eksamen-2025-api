@@ -58,7 +58,7 @@ nvm use node
 # Installer PM2 globalt for både root og dev-bruker (eller SUDO_USER)
 npm install -g pm2@latest
 if [ "$SUDO_USER" ]; then
-  sudo -u $SUDO_USER npm install -g pm2@latest
+  sudo -u $SUDO_USER bash -c 'export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"; npm install -g pm2@latest'
 fi
 npm install
 
