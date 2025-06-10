@@ -31,11 +31,19 @@ else
   [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 fi
 
-# 3. Klon kun api-prosjektet
-if [ ! -d "$API_FOLDER" ]; then
-  git clone "$GIT_REPO" "$API_FOLDER"
+# 3. Klon kun api-prosjektet til dev-brukerens hjemmemappe hvis SUDO_USER er satt
+if [ "$SUDO_USER" ]; then
+  API_FOLDER="/home/$SUDO_USER/foxvote-api"
+  if [ ! -d "$API_FOLDER" ]; then
+    sudo -u $SUDO_USER git clone "$GIT_REPO" "$API_FOLDER"
+  fi
+  cd "$API_FOLDER"
+else
+  if [ ! -d "$API_FOLDER" ]; then
+    git clone "$GIT_REPO" "$API_FOLDER"
+  fi
+  cd "$API_FOLDER"
 fi
-cd "$API_FOLDER"
 
 # 3b. Lag .env fra eksempel hvis ikke finnes
 if [ ! -f .env ]; then
@@ -47,7 +55,11 @@ nvm install node
 nvm use node
 
 # 5. Installer avhengigheter og PM2
-npm install -g pm2
+# Installer PM2 globalt for både root og dev-bruker (eller SUDO_USER)
+npm install -g pm2@latest
+if [ "$SUDO_USER" ]; then
+  sudo -u $SUDO_USER npm install -g pm2@latest
+fi
 npm install
 
 # 6. Start API med PM2
