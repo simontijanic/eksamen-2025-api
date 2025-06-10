@@ -82,21 +82,30 @@ nvm install node
 nvm use node
 
 # 5. Installer avhengigheter og PM2
-# Installer PM2 globalt for både root og dev-bruker (eller SUDO_USER)
+# Installer PM2 globalt for root
 npm install -g pm2@latest
+
+# Installer NVM for dev-brukeren hvis SUDO_USER er satt
 if [ "$SUDO_USER" ]; then
-  sudo -u $SUDO_USER bash -c 'export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"; npm install -g pm2@latest'
-fi
-# 3. Hvis npm install feiler, prøv igjen én gang automatisk.
-NPM_INSTALL_ATTEMPTS=0
-until npm install || [ $NPM_INSTALL_ATTEMPTS -ge 1 ]; do
-  NPM_INSTALL_ATTEMPTS=$((NPM_INSTALL_ATTEMPTS+1))
-  echo "npm install feilet, prøver igjen ($NPM_INSTALL_ATTEMPTS)..."
-  sleep 2
-done
-if [ $NPM_INSTALL_ATTEMPTS -ge 1 ]; then
-  echo "npm install feilet etter flere forsøk. Avslutter."
-  exit 1
+  echo "Installerer NVM for dev-bruker $SUDO_USER..."
+  sudo -u $SUDO_USER bash -c 'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash'
+  sudo -u $SUDO_USER bash -c 'export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"; nvm install node && nvm use node && npm install -g pm2@latest'
+  
+  # Installer prosjekt-avhengigheter som dev-bruker i prosjektmappen
+  echo "Installerer prosjekt-avhengigheter som dev-bruker..."
+  sudo -u $SUDO_USER bash -c "cd '$API_FOLDER' && export NVM_DIR=\"\$HOME/.nvm\" && [ -s \"\$NVM_DIR/nvm.sh\" ] && \. \"\$NVM_DIR/nvm.sh\" && npm install"
+else
+  # 3. Hvis npm install feiler, prøv igjen én gang automatisk.
+  NPM_INSTALL_ATTEMPTS=0
+  until npm install || [ $NPM_INSTALL_ATTEMPTS -ge 1 ]; do
+    NPM_INSTALL_ATTEMPTS=$((NPM_INSTALL_ATTEMPTS+1))
+    echo "npm install feilet, prøver igjen ($NPM_INSTALL_ATTEMPTS)..."
+    sleep 2
+  done
+  if [ $NPM_INSTALL_ATTEMPTS -ge 1 ]; then
+    echo "npm install feilet etter flere forsøk. Avslutter."
+    exit 1
+  fi
 fi
 
 # 6. Start API med PM2
