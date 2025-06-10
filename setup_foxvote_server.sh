@@ -31,16 +31,52 @@ else
   [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 fi
 
+# Ekstra robusthet og backup-planer for vanlige feil
+# --------------------------------------------------
+# 1. Hvis NVM installasjon feiler, prøv igjen én gang automatisk.
+NVM_INSTALL_ATTEMPTS=0
+until command -v nvm &> /dev/null || [ $NVM_INSTALL_ATTEMPTS -ge 2 ]; do
+  NVM_INSTALL_ATTEMPTS=$((NVM_INSTALL_ATTEMPTS+1))
+  echo "Forsøker å installere NVM (forsøk $NVM_INSTALL_ATTEMPTS)..."
+  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+  export NVM_DIR="$HOME/.nvm"
+  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+done
+if ! command -v nvm &> /dev/null; then
+  echo "NVM installasjon feilet etter flere forsøk. Avslutter."
+  exit 1
+fi
+
 # 3. Klon kun api-prosjektet til dev-brukerens hjemmemappe hvis SUDO_USER er satt
 if [ "$SUDO_USER" ]; then
   API_FOLDER="/home/$SUDO_USER/foxvote-api"
+  # 2. Hvis git clone feiler, prøv igjen én gang automatisk.
+  GIT_CLONE_ATTEMPTS=0
+  CLONE_OK=0
+  while [ $GIT_CLONE_ATTEMPTS -lt 2 ] && [ ! -d "$API_FOLDER" ]; do
+    GIT_CLONE_ATTEMPTS=$((GIT_CLONE_ATTEMPTS+1))
+    echo "Kloner repo til $API_FOLDER (forsøk $GIT_CLONE_ATTEMPTS)..."
+    sudo -u $SUDO_USER git clone "$GIT_REPO" "$API_FOLDER" && CLONE_OK=1 && break
+    sleep 2
+  done
   if [ ! -d "$API_FOLDER" ]; then
-    sudo -u $SUDO_USER git clone "$GIT_REPO" "$API_FOLDER"
+    echo "Klarte ikke å klone repo etter flere forsøk. Avslutter."
+    exit 1
   fi
   cd "$API_FOLDER"
 else
+  # 2. Hvis git clone feiler, prøv igjen én gang automatisk.
+  GIT_CLONE_ATTEMPTS=0
+  CLONE_OK=0
+  while [ $GIT_CLONE_ATTEMPTS -lt 2 ] && [ ! -d "$API_FOLDER" ]; do
+    GIT_CLONE_ATTEMPTS=$((GIT_CLONE_ATTEMPTS+1))
+    echo "Kloner repo til $API_FOLDER (forsøk $GIT_CLONE_ATTEMPTS)..."
+    git clone "$GIT_REPO" "$API_FOLDER" && CLONE_OK=1 && break
+    sleep 2
+  done
   if [ ! -d "$API_FOLDER" ]; then
-    git clone "$GIT_REPO" "$API_FOLDER"
+    echo "Klarte ikke å klone repo etter flere forsøk. Avslutter."
+    exit 1
   fi
   cd "$API_FOLDER"
 fi
@@ -60,7 +96,17 @@ npm install -g pm2@latest
 if [ "$SUDO_USER" ]; then
   sudo -u $SUDO_USER bash -c 'export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"; npm install -g pm2@latest'
 fi
-npm install
+# 3. Hvis npm install feiler, prøv igjen én gang automatisk.
+NPM_INSTALL_ATTEMPTS=0
+until npm install || [ $NPM_INSTALL_ATTEMPTS -ge 1 ]; do
+  NPM_INSTALL_ATTEMPTS=$((NPM_INSTALL_ATTEMPTS+1))
+  echo "npm install feilet, prøver igjen ($NPM_INSTALL_ATTEMPTS)..."
+  sleep 2
+done
+if [ $NPM_INSTALL_ATTEMPTS -ge 1 ]; then
+  echo "npm install feilet etter flere forsøk. Avslutter."
+  exit 1
+fi
 
 # 6. Start API med PM2
 pm2 start index.js --name foxapi
