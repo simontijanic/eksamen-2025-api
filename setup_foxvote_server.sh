@@ -1,5 +1,5 @@
 #!/bin/bash
-# Setup script for Ubuntu 22: Node.js (via FNM), PM2, and Nginx for foxvote-api only
+# Setup script for Ubuntu 22: Node.js (via NVM), PM2, and Nginx for foxvote-api only
 # Usage: sudo bash setup_foxvote_server.sh https://github.com/simontijanic/eksamen-2025-api.git  /home/ubuntu/foxvote-api
 
 set -e
@@ -21,27 +21,14 @@ API_FOLDER="$2"
 apt update && apt upgrade -y
 apt install -y curl git unzip nginx
 
-# 2. Installer FNM (Fast Node Manager)
-if ! command -v fnm &> /dev/null; then
-  curl -fsSL https://fnm.vercel.app/install | bash
-  # Sett opp FNM for dette shell-et direkte (ikke bare via .bashrc)
-  if [ "$SUDO_USER" ]; then
-    USER_HOME="/home/$SUDO_USER"
-  else
-    USER_HOME="$HOME"
-  fi
-  FNM_BIN_PATH="$USER_HOME/.local/share/fnm"
-  export PATH="$FNM_BIN_PATH/.bin:$PATH"
-  eval "$($FNM_BIN_PATH/.bin/fnm env)"
+# 2. Installer NVM (Node Version Manager)
+if ! command -v nvm &> /dev/null; then
+  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+  export NVM_DIR="$HOME/.nvm"
+  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 else
-  if [ "$SUDO_USER" ]; then
-    USER_HOME="/home/$SUDO_USER"
-  else
-    USER_HOME="$HOME"
-  fi
-  FNM_BIN_PATH="$USER_HOME/.local/share/fnm"
-  export PATH="$FNM_BIN_PATH/.bin:$PATH"
-  eval "$($FNM_BIN_PATH/.bin/fnm env)"
+  export NVM_DIR="$HOME/.nvm"
+  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 fi
 
 # 3. Klon kun api-prosjektet
@@ -55,9 +42,9 @@ if [ ! -f .env ]; then
   cp .env.example .env
 fi
 
-# 4. Installer siste versjon av Node.js via FNM
-fnm install latest
-fnm use latest
+# 4. Installer siste versjon av Node.js via NVM
+nvm install node
+nvm use node
 
 # 5. Installer avhengigheter og PM2
 npm install -g pm2
