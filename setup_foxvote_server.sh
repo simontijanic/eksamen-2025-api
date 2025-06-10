@@ -122,6 +122,22 @@ EOL
 ln -sf /etc/nginx/sites-available/foxvote-api /etc/nginx/sites-enabled/foxvote-api
 nginx -t && systemctl reload nginx
 
+# 4b. Sørg for at NVM lastes automatisk for dev-brukeren i nye shells
+if [ "$SUDO_USER" ]; then
+  DEV_HOME="/home/$SUDO_USER"
+  NVM_INIT='export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"'
+  if ! sudo -u $SUDO_USER grep -q 'nvm.sh' "$DEV_HOME/.bashrc"; then
+    echo -e "\n# NVM init for Node.js\n$NVM_INIT" | sudo -u $SUDO_USER tee -a "$DEV_HOME/.bashrc" > /dev/null
+  fi
+else
+  NVM_INIT='export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"'
+  if ! grep -q 'nvm.sh' "$HOME/.bashrc"; then
+    echo -e "\n# NVM init for Node.js\n$NVM_INIT" >> "$HOME/.bashrc"
+  fi
+fi
+
 echo "\n--- Ferdig! ---"
 echo "API kjører på http://<server-ip>/api/"
 echo "API-mappe: $API_FOLDER"
