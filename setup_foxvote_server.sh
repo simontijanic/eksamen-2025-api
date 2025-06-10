@@ -56,8 +56,6 @@ if [ ! -f .env ]; then
 fi
 
 # 4. Installer siste versjon av Node.js via FNM
-export PATH="$HOME/.fnm:$PATH"
-eval "$(fnm env)"
 fnm install latest
 fnm use latest
 
