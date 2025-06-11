@@ -19,7 +19,8 @@ exports.voteForFox = async (req, res) => {
     const { imageId } = req.body;
     if (!imageId) return res.status(400).json({ message: 'imageId is required' });
 
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress; // x-forwarded-for for proxyer, ellers direkte IP
+    // hvis serveren står bak en proxy som nginx bil brukerens ip ligge i http headeren x-forwarded-for hvis ikke så bruker vi direkte ip fra socketen
     const now = Date.now();
 
     if (voteCooldowns[ip] && now - voteCooldowns[ip] < COOLDOWN_MS) {
@@ -31,8 +32,8 @@ exports.voteForFox = async (req, res) => {
         // Øk stemmetallet for valgt bilde
         const vote = await Vote.findOneAndUpdate(
             { imageId },
-            { $inc: { votes: 1 } },
-            { upsert: true, new: true }
+            { $inc: { votes: 1 } }, // $inc øker stemmetallet med 1
+            { upsert: true, new: true } // Opprett hvis ikke eksisterer, returner ny stemme
         );
         res.json({ message: 'Stemme registrert', vote });
     } catch (err) {
@@ -43,8 +44,9 @@ exports.voteForFox = async (req, res) => {
 // Hent toppliste og leder
 exports.getStats = async (req, res) => {
     try {
-        const toplist = await Vote.find().sort({ votes: -1 }).limit(10);
-        const leader = toplist[0] ? { imageId: toplist[0].imageId, votes: toplist[0].votes } : null;
+        const toplist = await Vote.find().sort({ votes: -1 }).limit(10); // Hent topp 10 rever sortert etter stemmer
+        const leader = toplist[0] ? { imageId: toplist[0].imageId, votes: toplist[0].votes } : null; 
+        // hvis toplist finnes settes leader til et objekt med bilde id, og antall stemmer, og hvis ingen har stemt settes leader til null
         res.json({ leader, toplist });
     } catch (err) {
         res.status(500).json({ message: 'Database-feil' });
