@@ -1,0 +1,33 @@
+name: Deploy to Self-Hosted Runner
+ 
+on:
+  push:
+    branches:
+      - main
+ 
+jobs:
+  deploy:
+    runs-on: self-hosted
+ 
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+ 
+      - name: Install dependencies
+        run: npm install
+ 
+      - name: Create .env.production file
+        run: |
+          cat <<EOF > .env.production
+          PORT=${{ secrets.PORT }}
+          MONGODB_URI=${{ secrets.MONGODB_URI }}
+          FOX_IMAGE_BASE_URL=https://randomfox.ca/images/
+          NODE_ENV=production
+          EOF
+ 
+      - name: Start or reload with PM2
+        run: |
+          pm2 start index.js
+ 
+      - name: Save PM2 process list
+        run: pm2 save

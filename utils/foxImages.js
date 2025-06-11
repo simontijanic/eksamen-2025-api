@@ -1,18 +1,18 @@
 // Hjelpefunksjoner for å generere og validere fox image IDs og URLs
 
 const MAX_FOX_ID = 123;
+const FOX_IMAGE_BASE_URL = process.env.FOX_IMAGE_BASE_URL || 'https://randomfox.ca/images/';
 
 function getRandomFoxId(excludeId = null) {
     let id;
     do {
         id = Math.floor(Math.random() * MAX_FOX_ID) + 1;
-    } while (id === excludeId); // hvis du passer inn et excludeId så vil det ikke bli valgt
-    // Dette sikrer at vi ikke får samme ID som allerede er valgt
+    } while (id === excludeId);
     return id;
 }
 
 function getFoxImageUrl(id) {
-    return `https://randomfox.ca/images/${id}.jpg`;
+    return `${FOX_IMAGE_BASE_URL}${id}.jpg`;
 }
 
 module.exports = {
