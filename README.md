@@ -10,8 +10,30 @@ api/
 ├── package.json              # Node.js avhengigheter
 ├── .env.example              # Miljøvariabler mal
 ├── setup_foxvote_server.sh   # Automatisk oppsett for Ubuntu
+├── ecosystem.config.js       # PM2 prosesskonfig
+├── config/
+│   └── database.js           # Database-tilkobling (MongoDB)
+├── controllers/
+│   └── foxController.js      # API-logikk for bilder, stemming, statistikk
+├── models/
+│   └── vote.js               # Mongoose-modell for stemmer
+├── routes/
+│   └── foxRoutes.js          # API-ruter
+├── utils/
+│   └── foxImages.js          # Hjelpefunksjoner for bilder
 └── README.md                 # Denne filen
 ```
+
+## 🛠️ Verktøy og teknologi
+- **Node.js/Express** – Backend-rammeverk
+- **MongoDB/Mongoose** – Database og ODM
+- **Nginx** – Reverse proxy
+- **PM2** – Prosessmanager for Node.js
+- **UFW** – Brannmur
+- **Bash** – Automatiseringsskript
+- **express-rate-limit** – Rate limiting
+- **dotenv** – Miljøvariabler
+- **GitHub Actions** – CI/CD for automatisk deploy
 
 ## 🗂️ Prosjektskisse og arkitektur
 
@@ -21,6 +43,24 @@ api/
 
 **Database-tabell:**
 - `Vote` (imageId: string, votes: number)
+
+**Arkitekturdiagram:**
+```
+[ Bruker ]
+    |
+    v
+[Frontend VM: Nginx + statiske filer]
+    |
+    v
+[Backend VM: Nginx (proxy) -> Node.js/Express (API)]
+    |
+    v
+[Database VM: MongoDB]
+```
+- **IP-plan:**
+  - Frontend: 10.12.87.102
+  - Backend:  10.12.87.101
+  - Database: 10.12.87.100
 
 ## 🚀 Automatisk oppsett med bash-script (Ubuntu 22.04)
 
@@ -67,6 +107,7 @@ sudo bash setup_foxvote_server.sh https://github.com/simontijanic/eksamen-2025-a
 ```env
 MONGODB_URI=mongodb://localhost:27017/2025eksamenb
 PORT=3000
+FOX_IMAGE_BASE_URL=https://randomfox.ca/images/
 ```
 
 ### Nginx-konfigurasjon (settes automatisk av scriptet):
@@ -83,6 +124,22 @@ server {
     }
 }
 ```
+
+---
+
+## 📊 ER-diagram (datamodell)
+
+```
++-------+
+| Vote  |
++-------+
+| imageId : string (PK)
+| votes   : number
++-------+
+```
+
+- Hver stemme lagres med bilde-ID (imageId) og antall stemmer (votes).
+- imageId er unik for hvert bilde (primærnøkkel).
 
 ---
 
