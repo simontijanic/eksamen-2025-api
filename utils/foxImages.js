@@ -12,7 +12,7 @@ function getRandomFoxId(excludeId = null) {
 }
 
 function getFoxImageUrl(id) {
-    return `${FOX_IMAGE_BASE_URL}${id}.jpg`;
+    return `${FOX_IMAGE_BASE_URL}${id}.jpg`; // Genererer URL for fox-bilde
 }
 
 module.exports = {
