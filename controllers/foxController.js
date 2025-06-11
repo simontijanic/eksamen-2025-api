@@ -1,9 +1,6 @@
 const Vote = require('../models/vote');
 const { getRandomFoxId, getFoxImageUrl } = require('../utils/foxImages');
 
-const COOLDOWN_MS = 3000; // 3 sekunder
-const voteCooldowns = {}; // IP -> timestamp
-
 // Hent to tilfeldige rever
 exports.getRandomImages = async (req, res) => {
     const id1 = getRandomFoxId();
@@ -18,15 +15,6 @@ exports.getRandomImages = async (req, res) => {
 exports.voteForFox = async (req, res) => {
     const { imageId } = req.body;
     if (!imageId) return res.status(400).json({ message: 'imageId is required' });
-
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress; // x-forwarded-for for proxyer, ellers direkte IP
-    // hvis serveren står bak en proxy som nginx bil brukerens ip ligge i http headeren x-forwarded-for hvis ikke så bruker vi direkte ip fra socketen
-    const now = Date.now();
-
-    if (voteCooldowns[ip] && now - voteCooldowns[ip] < COOLDOWN_MS) {
-        return res.status(429).json({ message: 'Vent litt før du stemmer igjen.' });
-    }
-    voteCooldowns[ip] = now;
 
     try {
         // Øk stemmetallet for valgt bilde
