@@ -9,13 +9,14 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-if [ $# -ne 2 ]; then
-  echo "Usage: $0 <git_repo_url> <api_folder>"
+if [ $# -lt 2 ]; then
+  echo "Usage: $0 <git_repo_url> <api_folder> [github_actions_token]"
   exit 1
 fi
 
 GIT_REPO="$1"
 API_FOLDER="$2"
+GITHUB_ACTIONS_TOKEN="$3"
 
 # 1. Oppdater og installer avhengigheter
 apt update && apt upgrade -y
@@ -106,6 +107,24 @@ else
     echo "npm install feilet etter flere forsøk. Avslutter."
     exit 1
   fi
+fi
+
+# 5b. Installer GitHub Actions Runner hvis token er oppgitt
+if [ -n "$GITHUB_ACTIONS_TOKEN" ]; then
+  GITHUB_ACTIONS_RUNNER_VERSION="2.325.0"
+  GITHUB_ACTIONS_RUNNER_URL="https://github.com/actions/runner/releases/download/v${GITHUB_ACTIONS_RUNNER_VERSION}/actions-runner-linux-x64-${GITHUB_ACTIONS_RUNNER_VERSION}.tar.gz"
+  GITHUB_ACTIONS_RUNNER_SHA="5020da7139d85c776059f351e0de8fdec753affc9c558e892472d43ebeb518f4"
+  GITHUB_ACTIONS_REPO_URL="$GIT_REPO"
+  RUNNER_DIR="$API_FOLDER/actions-runner"
+  mkdir -p "$RUNNER_DIR"
+  cd "$RUNNER_DIR"
+  curl -o actions-runner-linux-x64-${GITHUB_ACTIONS_RUNNER_VERSION}.tar.gz -L "$GITHUB_ACTIONS_RUNNER_URL"
+  echo "$GITHUB_ACTIONS_RUNNER_SHA  actions-runner-linux-x64-${GITHUB_ACTIONS_RUNNER_VERSION}.tar.gz" | shasum -a 256 -c
+  tar xzf ./actions-runner-linux-x64-${GITHUB_ACTIONS_RUNNER_VERSION}.tar.gz
+  ./config.sh --url "${GITHUB_ACTIONS_REPO_URL%.git}" --token "$GITHUB_ACTIONS_TOKEN"
+  sudo ./svc.sh install
+  sudo ./svc.sh start
+  cd "$API_FOLDER"
 fi
 
 # 6. Start API med PM2
