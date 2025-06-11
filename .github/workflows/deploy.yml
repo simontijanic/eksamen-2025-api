@@ -19,8 +19,8 @@ jobs:
       - name: Create .env.production file
         run: |
           cat <<EOF > .env.production
-          PORT=${{ secrets.PORT }}
-          MONGODB_URI=${{ secrets.MONGODB_URI }}
+          PORT=3000
+          MONGODB_URI=mongodb://10.12.87.100/2025eksamenb
           FOX_IMAGE_BASE_URL=https://randomfox.ca/images/
           NODE_ENV=production
           EOF
