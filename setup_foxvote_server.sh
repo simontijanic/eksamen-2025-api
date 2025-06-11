@@ -1,6 +1,5 @@
-#!/bin/bash
-# Setup script for Ubuntu 22: Node.js (via NVM), PM2, and Nginx for foxvote-api only
 # Usage: sudo bash setup_foxvote_server.sh https://github.com/simontijanic/eksamen-2025-api.git  /home/ubuntu/foxvote-api
+# sudo bash setup_foxvote_server.sh <git_repo_url> <api_folder> <github_actions_token>
 
 set -e
 
