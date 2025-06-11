@@ -27,7 +27,7 @@ jobs:
  
       - name: Start or reload with PM2
         run: |
-          pm2 start index.js
+          pm2 start index.js -f
  
       - name: Save PM2 process list
         run: pm2 save
