@@ -7,7 +7,7 @@ module.exports = {
                 NODE_ENV: 'production',
                 PORT: 3000,
                 MONGODB_URI: process.env.MONGODB_URI,
-                JOKEAPI: `https://official-joke-api.appspot.com/random_joke`
+                JOKEAPI: 'https://official-joke-api.appspot.com/random_joke'
         }
     ]
 }
