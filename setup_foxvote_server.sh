@@ -47,30 +47,11 @@ if ! command -v nvm &> /dev/null; then
   exit 1
 fi
 
-# 3. Klon kun api-prosjektet til dev-brukerens hjemmemappe hvis SUDO_USER er satt
-if [ "$SUDO_USER" ]; then
-  DEV_HOME="/home/$SUDO_USER"
-  API_FOLDER="$DEV_HOME/foxvote-api"
-  if [ ! -d "$API_FOLDER" ]; then
-    sudo -u $SUDO_USER git clone "$GIT_REPO" "$API_FOLDER"
-  fi
-  cd "$API_FOLDER"
-else
-  # 2. Hvis git clone feiler, prøv igjen én gang automatisk.
-  GIT_CLONE_ATTEMPTS=0
-  CLONE_OK=0
-  while [ $GIT_CLONE_ATTEMPTS -lt 2 ] && [ ! -d "$API_FOLDER" ]; do
-    GIT_CLONE_ATTEMPTS=$((GIT_CLONE_ATTEMPTS+1))
-    echo "Kloner repo til $API_FOLDER (forsøk $GIT_CLONE_ATTEMPTS)..."
-    git clone "$GIT_REPO" "$API_FOLDER" && CLONE_OK=1 && break
-    sleep 2
-  done
-  if [ ! -d "$API_FOLDER" ]; then
-    echo "Klarte ikke å klone repo etter flere forsøk. Avslutter."
-    exit 1
-  fi
-  cd "$API_FOLDER"
+# 3. Klon api-prosjektet til valgt mappe
+if [ ! -d "$API_FOLDER" ]; then
+  git clone "$GIT_REPO" "$API_FOLDER"
 fi
+cd "$API_FOLDER"
 
 # 3b. Lag .env fra eksempel hvis ikke finnes
 if [ ! -f .env ]; then
@@ -82,31 +63,8 @@ nvm install node
 nvm use node
 
 # 5. Installer avhengigheter og PM2
-# Installer PM2 globalt for root
 npm install -g pm2@latest
-
-# Installer NVM for dev-brukeren hvis SUDO_USER er satt
-if [ "$SUDO_USER" ]; then
-  echo "Installerer NVM for dev-bruker $SUDO_USER..."
-  sudo -u $SUDO_USER bash -c 'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash'
-  sudo -u $SUDO_USER bash -c 'export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"; nvm install node && nvm use node && npm install -g pm2@latest'
-  
-  # Installer prosjekt-avhengigheter som dev-bruker i prosjektmappen
-  echo "Installerer prosjekt-avhengigheter som dev-bruker..."
-  sudo -u $SUDO_USER bash -c "cd '$API_FOLDER' && export NVM_DIR=\"\$HOME/.nvm\" && [ -s \"\$NVM_DIR/nvm.sh\" ] && \. \"\$NVM_DIR/nvm.sh\" && npm install"
-else
-  # 3. Hvis npm install feiler, prøv igjen én gang automatisk.
-  NPM_INSTALL_ATTEMPTS=0
-  until npm install || [ $NPM_INSTALL_ATTEMPTS -ge 1 ]; do
-    NPM_INSTALL_ATTEMPTS=$((NPM_INSTALL_ATTEMPTS+1))
-    echo "npm install feilet, prøver igjen ($NPM_INSTALL_ATTEMPTS)..."
-    sleep 2
-  done
-  if [ $NPM_INSTALL_ATTEMPTS -ge 1 ]; then
-    echo "npm install feilet etter flere forsøk. Avslutter."
-    exit 1
-  fi
-fi
+npm install
 
 # 5b. Installer GitHub Actions Runner hvis token er oppgitt
 if [ -n "$GITHUB_ACTIONS_TOKEN" ]; then
@@ -127,11 +85,11 @@ if [ -n "$GITHUB_ACTIONS_TOKEN" ]; then
 fi
 
 # 6. Start API med PM2
-pm2 start index.js --name foxapi
+pm2 start index.js --name jokeapi
 pm2 save
 
 # 7. Sett opp Nginx reverse proxy
-cat >/etc/nginx/sites-available/foxvote-api <<EOL
+cat >/etc/nginx/sites-available/joke-api <<EOL
 server {
     listen 80;
     server_name _;
@@ -149,23 +107,21 @@ EOL
 # Remove default nginx configuration
 rm -f /etc/nginx/sites-enabled/default
 
-# Enable foxvote-api configuration
-ln -sf /etc/nginx/sites-available/foxvote-api /etc/nginx/sites-enabled/foxvote-api
+# Enable joke-api configuration
+ln -sf /etc/nginx/sites-available/joke-api /etc/nginx/sites-enabled/joke-api
 
 # Test configuration and reload nginx
 nginx -t && systemctl reload nginx
 
 # 4b. Sørg for at NVM lastes automatisk for dev-brukeren i nye shells
+NVM_INIT='export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"'
 if [ "$SUDO_USER" ]; then
   DEV_HOME="/home/$SUDO_USER"
-  NVM_INIT='export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"'
   if ! sudo -u $SUDO_USER grep -q 'nvm.sh' "$DEV_HOME/.bashrc"; then
     echo -e "\n# NVM init for Node.js\n$NVM_INIT" | sudo -u $SUDO_USER tee -a "$DEV_HOME/.bashrc" > /dev/null
   fi
 else
-  NVM_INIT='export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"'
   if ! grep -q 'nvm.sh' "$HOME/.bashrc"; then
     echo -e "\n# NVM init for Node.js\n$NVM_INIT" >> "$HOME/.bashrc"
   fi

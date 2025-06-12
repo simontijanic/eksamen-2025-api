@@ -20,7 +20,8 @@ jobs:
         run: |
           cat <<EOF > .env
           PORT=3000
-          MONGODB_URI=mongodb://10.12.87.100/2025eksamenb
+          MONGODB_URI=mongodb://10.12.87.100/JokeAPI
+          JOKEAPI=https://official-joke-api.appspot.com/random_joke
           NODE_ENV=production
           EOF
  
