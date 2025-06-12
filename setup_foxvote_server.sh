@@ -1,5 +1,5 @@
-# Usage: sudo bash setup_foxvote_server.sh https://github.com/simontijanic/eksamen-2025-api.git  /home/ubuntu/foxvote-api
-# sudo bash setup_foxvote_server.sh <git_repo_url> <api_folder> <github_actions_token>
+#!/bin/bash
+# Usage: sudo bash setup_joke_server.sh <git_repo_url> <api_folder> [github_actions_token]
 
 set -e
 
