@@ -28,10 +28,8 @@ api/
 - **Nginx** – Reverse proxy
 - **PM2** – Prosessmanager for Node.js
 - **UFW** – Brannmur
-- **Bash** – Automatiseringsskript
 - **express-rate-limit** – Rate limiting
 - **dotenv** – Miljøvariabler
-- **GitHub Actions** – CI/CD for automatisk deploy
 - **Bootstrap 5** – Frontend-rammeverk
 - **Vanilla JavaScript** – Frontend-logikk
 - **HTML/CSS** – Struktur og styling
@@ -60,32 +58,6 @@ api/
 [Database VM: MongoDB]
 ```
 
-## 🚀 Automatisk oppsett med bash-script (Ubuntu 22.04)
-
-### Slik gjør du:
-```bash
-curl -O https://raw.githubusercontent.com/simontijanic/eksamen-2025-api/main/setup_joke_server.sh
-chmod +x setup_joke_server.sh
-sudo bash setup_joke_server.sh https://github.com/simontijanic/eksamen-2025-api.git /home/ubuntu/joke-api
-```
-
-### Hva scriptet gjør:
-- Installerer nødvendige pakker (curl, git, nginx, unzip)
-- Installerer NVM og Node.js LTS
-- Kloner API-koden fra GitHub
-- Oppretter `.env` fra `.env.example`
-- Installerer npm-avhengigheter og PM2
-- Starter API med PM2
-- Setter opp Nginx reverse proxy for `/api/`
-- Konfigurerer brannmur (UFW):
-  - Åpner port 80 (HTTP) og 22 (SSH)
-  - Åpner port 3000 kun for frontend-serveren
-  - Blokkerer all annen innkommende trafikk
-
-### Etter installasjon:
-- **API-tilgang:** `http://<server-ip>/api/`
-- **Status:** `pm2 status` for å sjekke prosessen
-- **Logger:** `pm2 logs` for å se API-logger
 
 ---
 
@@ -237,4 +209,6 @@ server {
 - Sjekk PM2-logger: pm2 logs jokeapi
 - Kontroller systemstatus: pm2 status
 - Se Nginx-logger: sudo tail -f /var/log/nginx/error.log
+
+
 

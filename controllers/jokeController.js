@@ -1,7 +1,7 @@
 const axios = require('axios');
 const JokeReview = require('../models/jokeReview');
 
-// Hent én tilfeldig vits fra ekstern API med axios
+// Hent en tilfeldig vits fra ekstern API med axios
 exports.getRandomJoke = async (req, res) => {
     try {
         const response = await axios.get(process.env.JOKEAPI);
@@ -13,18 +13,31 @@ exports.getRandomJoke = async (req, res) => {
 
 // Lagre en anmeldelse av en vits
 exports.reviewJoke = async (req, res) => {
+    // Hent ut data fra requesten
     const { jokeId, stars, comment } = req.body;
-    if (!jokeId || !stars) return res.status(400).json({ message: 'jokeId og stars er påkrevd' });
+    // Sjekk at jokeId og stars er med
+    if (!jokeId || !stars) {
+        res.status(400).json({ message: 'jokeId og stars er påkrevd' });
+        return;
+    }
     try {
+        // Lagre anmeldelsen i databasen
         await JokeReview.create({ jokeId, stars, comment });
-        // Finn ny gjennomsnittsrating
-        const agg = await JokeReview.aggregate([
-            { $match: { jokeId: Number(jokeId) } },
-            { $group: { _id: '$jokeId', avg: { $avg: '$stars' }, count: { $sum: 1 } } }
-        ]);
-        const avg = agg[0] ? agg[0].avg : null;
-        const count = agg[0] ? agg[0].count : 0;
-        res.json({ message: 'Takk for anmeldelsen!', average: avg, count });
+        // Hent alle anmeldelser for denne vitsen
+        const reviews = await JokeReview.find({ jokeId: Number(jokeId) });
+        // Regn ut gjennomsnitt og antall
+        // Vi går gjennom alle anmeldelser (reviews) og legger sammen stjerner
+        let sum = 0;
+        for (let i = 0; i < reviews.length; i++) {
+            sum = sum + reviews[i].stars; // Legger til stjerner fra hver anmeldelse
+        }
+        let count = reviews.length; // Teller hvor mange anmeldelser det er
+        let avg = 0;
+        if (count > 0) {
+            avg = sum / count; // Deler summen på antall for å få gjennomsnitt
+        }
+        // Send svar tilbake til frontend
+        res.json({ message: 'Takk for anmeldelsen!', average: avg, count: count });
     } catch (err) {
         res.status(500).json({ message: 'Database-feil' });
     }
@@ -32,16 +45,28 @@ exports.reviewJoke = async (req, res) => {
 
 // Hent gjennomsnittsrating for en vits
 exports.getJokeAverage = async (req, res) => {
+    // Hent ut jokeId fra URL
     const jokeId = Number(req.params.jokeId);
-    if (!jokeId) return res.status(400).json({ message: 'jokeId er påkrevd' });
+    if (!jokeId) {
+        res.status(400).json({ message: 'jokeId er påkrevd' });
+        return;
+    }
     try {
-        const agg = await JokeReview.aggregate([
-            { $match: { jokeId } },
-            { $group: { _id: '$jokeId', avg: { $avg: '$stars' }, count: { $sum: 1 } } }
-        ]);
-        const avg = agg[0] ? agg[0].avg : null;
-        const count = agg[0] ? agg[0].count : 0;
-        res.json({ average: avg, count });
+        // Hent alle anmeldelser for denne vitsen
+        const reviews = await JokeReview.find({ jokeId: jokeId });
+        // Regn ut gjennomsnitt og antall
+        // Vi går gjennom alle anmeldelser (reviews) og legger sammen stjerner
+        let sum = 0;
+        for (let i = 0; i < reviews.length; i++) {
+            sum = sum + reviews[i].stars; // Legger til stjerner fra hver anmeldelse
+        }
+        let count = reviews.length; // Teller hvor mange anmeldelser det er
+        let avg = 0;
+        if (count > 0) {
+            avg = sum / count; // Deler summen på antall for å få gjennomsnitt
+        }
+        // Send svar tilbake til frontend
+        res.json({ average: avg, count: count });
     } catch (err) {
         res.status(500).json({ message: 'Database-feil' });
     }
