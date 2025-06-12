@@ -205,6 +205,29 @@ server {
 
 ---
 
+## 🛑 Mulige svakheter i databasen og hvordan forbedre dem
+
+**Svakheter i nåværende løsning:**
+- Alle anmeldelser lagres uten kobling til bruker (ingen autentisering). Det betyr at samme person kan anmelde samme vits mange ganger, og det er ingen måte å hindre juks.
+- Ingen sjekk på om en vits faktisk eksisterer i den eksterne API-en før anmeldelse lagres.
+- Ingen validering av kommentarens lengde eller innhold utover det som er satt i modellen.
+- Ingen indeksering på `jokeId` – kan bli tregt ved mange anmeldelser.
+- Ingen mulighet for å hente ut alle anmeldelser for en vits (kun snitt og antall).
+- Ingen "soft delete" eller mulighet for å trekke tilbake en anmeldelse.
+
+**Hvordan forbedre:**
+- Legg til brukersystem (autentisering) slik at én bruker kun kan anmelde hver vits én gang.
+- Legg til validering mot ekstern API for å sjekke at vitsen finnes før anmeldelse lagres.
+- Legg til bedre validering av kommentarer (lengde, språk, evt. banning-filter).
+- Legg til MongoDB-indeks på `jokeId` for raskere oppslag.
+- Lag et endepunkt for å hente ut alle anmeldelser for en vits (for f.eks. admin eller læringsformål).
+- Implementer "soft delete" (f.eks. `deleted: true`-felt) for å kunne trekke tilbake anmeldelser uten å slette data.
+
+**Forklaring (for studenter):**
+Dagens løsning er enkel og lett å forstå, men ikke robust mot juks eller misbruk. I en ekte applikasjon bør man alltid tenke på hvordan man kan sikre at dataene er riktige, at én bruker ikke kan stemme mange ganger, og at systemet tåler mange brukere uten å bli tregt. Indekser og autentisering er viktige verktøy for dette.
+
+---
+
 ## 📞 Support
 - Sjekk PM2-logger: pm2 logs jokeapi
 - Kontroller systemstatus: pm2 status
