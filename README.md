@@ -1,6 +1,6 @@
-# Foxvote API
+# Joke Review API
 
-Dette er backend-API for Foxvote-prosjektet – en Node.js/Express-server som håndterer stemmegivning og statistikk for søte rev-bilder.
+Dette er backend-API for vits-anmeldelser – en Node.js/Express-server som henter tilfeldige vitser fra en ekstern API og lar brukere anmelde dem med stjerner og kommentar.
 
 ## 📁 Prosjektstruktur
 
@@ -9,18 +9,16 @@ api/
 ├── index.js                  # Hovedfil for Express-server
 ├── package.json              # Node.js avhengigheter
 ├── .env.example              # Miljøvariabler mal
-├── setup_foxvote_server.sh   # Automatisk oppsett for Ubuntu
+├── setup_joke_server.sh      # Automatisk oppsett for Ubuntu
 ├── ecosystem.config.js       # PM2 prosesskonfig
 ├── config/
 │   └── database.js           # Database-tilkobling (MongoDB)
 ├── controllers/
-│   └── foxController.js      # API-logikk for bilder, stemming, statistikk
+│   └── jokeController.js     # API-logikk for vitser og anmeldelser
 ├── models/
-│   └── vote.js               # Mongoose-modell for stemmer
+│   └── jokeReview.js         # Mongoose-modell for vits-anmeldelser
 ├── routes/
-│   └── foxRoutes.js          # API-ruter
-├── utils/
-│   └── foxImages.js          # Hjelpefunksjoner for bilder
+│   └── jokeRoutes.js         # API-ruter for vits og anmeldelser
 └── README.md                 # Denne filen
 ```
 
@@ -34,15 +32,19 @@ api/
 - **express-rate-limit** – Rate limiting
 - **dotenv** – Miljøvariabler
 - **GitHub Actions** – CI/CD for automatisk deploy
+- **Bootstrap 5** – Frontend-rammeverk
+- **Vanilla JavaScript** – Frontend-logikk
+- **HTML/CSS** – Struktur og styling
+- **official-joke-api.appspot.com** – Ekstern API for vitser
 
-## 🗂️ Prosjektskisse og arkitektur
+## 🗂️ Arkitektur
 
-- **Frontend:** Kjører på egen VM, viser to tilfeldige rever, lar brukeren stemme, og viser statistikk. Kommuniserer med backend via API.
-- **Backend (API):** Node.js/Express-app på egen VM. Tar imot stemmer, leverer bilder og statistikk, og snakker med databasen.
+- **Frontend:** Viser én tilfeldig vits, lar brukeren gi stjerner og kommentar, og viser gjennomsnittlig vurdering. Kommuniserer med backend via API.
+- **Backend (API):** Node.js/Express-app på egen VM. Henter vits fra ekstern API, lagrer anmeldelser, og leverer statistikk.
 - **Database:** MongoDB på egen VM, kun tilgjengelig fra backendens interne IP.
 
 **Database-tabell:**
-- `Vote` (imageId: string, votes: number)
+- `JokeReview` (jokeId: number, stars: number, comment: string)
 
 **Arkitekturdiagram:**
 ```
@@ -57,18 +59,14 @@ api/
     v
 [Database VM: MongoDB]
 ```
-- **IP-plan:**
-  - Frontend: 10.12.87.102
-  - Backend:  10.12.87.101
-  - Database: 10.12.87.100
 
 ## 🚀 Automatisk oppsett med bash-script (Ubuntu 22.04)
 
 ### Slik gjør du:
 ```bash
-curl -O https://raw.githubusercontent.com/simontijanic/eksamen-2025-api/main/setup_foxvote_server.sh
-chmod +x setup_foxvote_server.sh
-sudo bash setup_foxvote_server.sh https://github.com/simontijanic/eksamen-2025-api.git /home/ubuntu/foxvote-api
+curl -O https://raw.githubusercontent.com/simontijanic/eksamen-2025-api/main/setup_joke_server.sh
+chmod +x setup_joke_server.sh
+sudo bash setup_joke_server.sh https://github.com/simontijanic/eksamen-2025-api.git /home/ubuntu/joke-api
 ```
 
 ### Hva scriptet gjør:
@@ -81,7 +79,7 @@ sudo bash setup_foxvote_server.sh https://github.com/simontijanic/eksamen-2025-a
 - Setter opp Nginx reverse proxy for `/api/`
 - Konfigurerer brannmur (UFW):
   - Åpner port 80 (HTTP) og 22 (SSH)
-  - Åpner port 3000 kun for frontend-serveren (10.12.87.102)
+  - Åpner port 3000 kun for frontend-serveren
   - Blokkerer all annen innkommende trafikk
 
 ### Etter installasjon:
@@ -93,11 +91,11 @@ sudo bash setup_foxvote_server.sh https://github.com/simontijanic/eksamen-2025-a
 
 ## 🔌 RESTful API-endepunkter
 
-| Metode | Endpoint      | Beskrivelse                        | Body/Parametre         | Respons |
-|--------|--------------|-------------------------------------|------------------------|---------|
-| GET    | /api/images  | Hent to tilfeldige rev-bilder       | -                      | `{ fox1: {id, url}, fox2: {id, url} }` |
-| POST   | /api/vote    | Stem på en rev                      | `{ imageId: string }`  | `{ message, vote }` |
-| GET    | /api/stats   | Hent toppliste og leder             | -                      | `{ leader, toplist }` |
+| Metode | Endpoint                | Beskrivelse                        | Body/Parametre         | Respons |
+|--------|------------------------|-------------------------------------|------------------------|---------|
+| GET    | /api/joke              | Hent én tilfeldig vits              | -                      | `{ id, setup, punchline, ... }` |
+| POST   | /api/joke/review       | Send inn anmeldelse av vits         | `{ jokeId, stars, comment }` | `{ message, average, count }` |
+| GET    | /api/joke/average/:id  | Hent gjennomsnittlig rating for vits| -                      | `{ average, count }` |
 
 ---
 
@@ -107,7 +105,6 @@ sudo bash setup_foxvote_server.sh https://github.com/simontijanic/eksamen-2025-a
 ```env
 MONGODB_URI=mongodb://localhost:27017/2025eksamenb
 PORT=3000
-FOX_IMAGE_BASE_URL=https://randomfox.ca/images/
 ```
 
 ### Nginx-konfigurasjon (settes automatisk av scriptet):
@@ -130,26 +127,25 @@ server {
 ## 📊 ER-diagram (datamodell)
 
 ```
-+-------+
-| Vote  |
-+-------+
-| imageId : string (PK)
-| votes   : number
-+-------+
++------------+
+| JokeReview |
++------------+
+| jokeId : number
+| stars  : number
+| comment: string
++------------+
 ```
 
-- Hver stemme lagres med bilde-ID (imageId) og antall stemmer (votes).
-- imageId er unik for hvert bilde (primærnøkkel).
+- Hver anmeldelse lagres med vits-ID (jokeId), stjerner (stars), og kommentar (comment).
 
 ---
 
 ## 🐾 Funksjonalitet og kravoppfyllelse
 
-- Viser to tilfeldige rever fra https://randomfox.ca/images/ (aldri samme bilde)
-- Brukeren kan stemme på én av revene via tydelig knapp
-- Systemet registrerer stemmer og gir tilbakemelding
-- Statistikk vises: ledermelding (toast), toppliste med små bilder, og antall stemmer
-- Statistikk oppdateres automatisk etter hver stemme
+- Viser en tilfeldig vits fra en ekstern kilde
+- Brukeren kan gi stjerner (1-5) og skrive kommentar på vitsen
+- Systemet lagrer anmeldelser og beregner gjennomsnittlig vurdering
+- Statistikk vises: gjennomsnittlig vurdering og antall anmeldelser
 - Universell utforming: ARIA, responsivt design, tastaturnavigasjon, tydelige meldinger
 - Feiltilstander gir brukervennlige feilmeldinger
 - Koden er kommentert for enkel forståelse
@@ -165,12 +161,12 @@ server {
 - **MongoDB lytter kun på backendens interne IP**
 
 ### Potensielle sikkerhetshull
-1. Mangler autentisering/autorisasjon – alle kan stemme så mye de vil
+1. Mangler autentisering/autorisasjon – alle kan sende inn anmeldelser
 2. Rate limiting kun på IP og i minnet – kan omgås med mange IP-er
-3. Ingen input-validering på imageId – mulig å sende ugyldige verdier
+3. Ingen input-validering på jokeId – mulig å sende ugyldige verdier
 
 ### Angrepstyper
-- Massestemming (vote stuffing) med script eller mange IP-er
+- Massesending av anmeldelser (spam) med script eller mange IP-er
 - Injection-angrep (f.eks. NoSQL injection hvis input ikke valideres)
 
 ### Tiltak for å redusere risiko
@@ -197,11 +193,11 @@ server {
 - Sjekk at API-et kjører:
   ```bash
   pm2 status
-  pm2 logs foxapi
+  pm2 logs jokeapi
   ```
   Start på nytt om nødvendig:
   ```bash
-  pm2 restart foxapi
+  pm2 restart jokeapi
   ```
 
 ### 2. Nginx feiler ved reload
@@ -212,7 +208,7 @@ server {
   ```
   Rett opp alle proxy_set_header-linjer slik at de har både navn og verdi (se eksempel over).
 
-### 3. Får 404 Not Found på /api/images
+### 3. Får 404 Not Found på /api/joke
 - API-et kjører ikke, eller feil i Nginx-proxy.
 - Sjekk at Node.js-API-et kjører (pm2 status).
 - Sjekk at Nginx-proxyen peker til riktig port (proxy_pass http://localhost:3000;).
@@ -238,7 +234,7 @@ server {
 ---
 
 ## 📞 Support
-- Sjekk PM2-logger: pm2 logs foxapi
+- Sjekk PM2-logger: pm2 logs jokeapi
 - Kontroller systemstatus: pm2 status
 - Se Nginx-logger: sudo tail -f /var/log/nginx/error.log
 
